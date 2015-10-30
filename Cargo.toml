@@ -1,0 +1,7 @@
+[package]
+name = "rusat"
+version = "0.1.0"
+authors = [" <>"]
+
+[dependencies]
+getopts = "0.2"
