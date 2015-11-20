@@ -1,9 +1,9 @@
 use std::{io, process, env};
 use std::io::prelude::*;
-use std::str;
 mod cnf_system;
-use cnf_system::{CNFSystem, CNFClause};
+use cnf_system::{CNFSystem, CNFClause, ClauseType};
 mod DPLL;
+use DPLL::{basic_dpll};
 
 // Show help and exit
 fn show_help(program_name: String) {
@@ -61,10 +61,10 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let program_name = args[0].clone();
     let arg_count: usize = args.len();
-    if arg_count == 1 {
-        show_help(program_name);
-        process::exit(0);
-    }
+    //if arg_count == 1 {
+    //    show_help(program_name);
+    //    process::exit(0);
+    //}
 
     // Set argument defaults
     let mut input_type = "dimacs".to_string();
@@ -73,10 +73,10 @@ fn main() {
     let mut input_file = "-".to_string();
 
     let mut check_type = "sat-check".to_string();
-    let check_types = vec!["sat-check", "model-check"];
+    //let check_types = vec!["sat-check", "model-check"];
 
     // Loop through each argument, changing argument options when necessary
-    let mut arg_index: usize = 1;
+    let mut arg_index = 1;
     while arg_index < arg_count {
         match args[arg_index].as_ref() {
             "-c" | "--check-sat" | "--sat-check" => {
@@ -118,14 +118,75 @@ fn main() {
         process::exit(38);
     }
 
-    // Find if the system is satisfiable or unsatisfiable or tautology
+    let mut input;
     if input_file == "-" {
         // Read in CNF system from stdin in dimacs form, for now
-        let input = io::stdin();
-        let system = CNFSystem::new(None);
+        input = io::stdin();
     } else {
         // TODO: Read from file
         println!("reading from file not implemented yet");
         process::exit(38);
+    }
+
+    let mut system = CNFSystem::new(None);
+    let mut contains_tautologies = false;
+
+    // Skip all comment lines i.e. a line that begins with 'c' and the program line i.e. a line
+    // like 'p VARIABLE_COUNT CLAUSE_COUNT'
+    'next_line: for lines in input.lock().lines() {
+        let current_line: String = lines.unwrap(); // expect string from iterator
+        let words = current_line.split_whitespace().collect::<Vec<_>>();
+        if words.len() == 0 {
+            continue;
+        }
+        let first_char = words.iter().next().unwrap()   // get first word
+                              .chars().next().unwrap(); // get first char (of first word)
+        if first_char == 'c'  || first_char == 'p' {
+            //println!("Ignoring: {:?}", words);
+            continue;
+        }
+        // Now, insert the actual input into the system
+        let mut current_clause = CNFClause::new();
+        for each_word in words {
+            // Convert word to integer
+            let literal = match each_word.parse::<isize>() {
+                Ok(word) => word,
+                Err(_) => error_and_exit(program_name,
+                                         format!("not a valid comment, program or input line: {}",
+                                                 current_line),
+                                         22),
+            };
+            // Check for tautologies
+            if literal == 0 {
+                break;
+            }
+            if current_clause.contains(-literal) {
+                contains_tautologies = true;
+                continue 'next_line;
+            } else {
+                current_clause.add(literal);
+            }
+        }
+        if current_clause.len() > 0 {
+            system.add_clause(current_clause);
+        }
+    }
+
+    if system.len() == 0 {
+        if contains_tautologies {
+            println!("TAUTOLOGY");
+        } else {
+            error_and_exit(program_name, format!("you need to enter a system"), 22);
+        }
+    } else {
+        //println!("System: {:?}", system);
+
+        // Find if the system is satisfiable or unsatisfiable or tautology
+        match basic_dpll(&mut system) {
+            (ClauseType::Tautology, _)     => println!("TAUTOLOGY"),
+            (ClauseType::Satisfiable, interpretation) => println!("SATISFIABLE: {:?}", interpretation),
+            (ClauseType::Unsatisfiable, _) => println!("UNSATISFIABLE"),
+            (ClauseType::Unknown, _)       => println!("UNKNOWN"),
+        }
     }
 }
