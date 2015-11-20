@@ -1,13 +1,12 @@
 use cnf_system::{CNFClause, CNFSystem, ClauseType};
-use std::collections::{HashSet, BTreeSet};
 
 /// Applies unit propagation of a literal l to a system.
 ///     If a clause contains: l, then remove that entire clause
 ///     If a clause contains: not(l), then remove not(l) from the clause but keep the other
 ///     literals
-/// Returns true if successful, false if a set 
+/// Returns true if successful, false if a set contradicts another
 fn basic_dpll_propagate(system: &mut CNFSystem, literal: isize) -> bool {
-    let mut created_new_empty_clause = false;
+    let mut no_empty_clauses = true;
     let mut clauses_to_remove: Vec<CNFClause> = vec![];
     let mut clauses_to_reduce: Vec<CNFClause> = vec![];
     for each_clause in system.clauses.iter().cloned() {
@@ -21,13 +20,17 @@ fn basic_dpll_propagate(system: &mut CNFSystem, literal: isize) -> bool {
         system.remove_clause(&each_clause);
     }
     for mut each_clause in clauses_to_reduce {
-        // Have to remove and then add because it's a hash
-        system.remove_clause(&each_clause);
-        each_clause.remove(&-literal);
-        created_new_empty_clause = each_clause.try_to_make_empty();
-        system.add_clause(each_clause);
+        // Check if successful because it could have been removed by the clauses_to_remove vector
+        if system.remove_clause(&each_clause) {
+            // Have to remove and then add because it's a hash
+            each_clause.remove(&-literal);
+            if no_empty_clauses == true {
+                no_empty_clauses = !each_clause.is_empty();
+            }
+            system.add_clause(each_clause);
+        }
     }
-    created_new_empty_clause
+    no_empty_clauses
 }
 
 /// Returns a unit literal, i.e. a literal that appears in a clause that only contains that literal
@@ -53,6 +56,7 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, Vec<isize>) {
                 if !basic_dpll_propagate(system, literal) {
                     return (ClauseType::Unsatisfiable, interpretation)
                 } else if system.len() == 0 {
+                    interpretation.push(literal);
                     return (ClauseType::Satisfiable, interpretation);
                 }
             }
@@ -80,11 +84,20 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, Vec<isize>) {
                         other_system.add_clause(other_new_clause);
                         interpretation.push(-some_literal);
                         // Must be Satisfiable or Unsatisfiable
+                        match basic_dpll(other_system) {
+                            (ClauseType::Satisfiable, new_interpretation) => {
+                                interpretation.extend(new_interpretation.iter().cloned());
+                                return (ClauseType::Satisfiable, interpretation);
+                            },
+                            (clause_type, new_interpretation) => {
+                                return (clause_type, new_interpretation);
+                            }
+                        }
                         return basic_dpll(other_system);
                     },
                     (clause_type, new_interpretation) => {
-                        let mut interpretation = new_interpretation;
                         interpretation.push(some_literal);
+                        interpretation.extend(new_interpretation.iter().cloned());
                         return (clause_type, interpretation)
                     },
                 }

@@ -1,4 +1,3 @@
-use std::collections::hash_set::Iter;
 use std::collections::{BTreeSet, HashSet};
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -44,7 +43,6 @@ impl CNFClause {
     /// ClauseType::Tautology, and returns true. Otherwise (including if unknown), returns false.
     pub fn is_tautology(&self) -> bool {
         let mut is_tautology = false;
-        let mut current_id: isize = isize::min_value();
         // Check if there are two literals with the same id and are both true and false
         // because (n1 ∨ ¬n1 ∨ ...) is always true
         for each_literal in self.literals.iter().filter(|&&x| x < 0) {
@@ -100,9 +98,8 @@ impl CNFClause {
     }
 
     /// If the clause contains no literals, then it adds a literal zero
-    pub fn try_to_make_empty(&mut self) -> bool {
+    pub fn is_empty(&self) -> bool {
         if self.len() == 0 {
-            self.add(0);
             true
         } else {
             false
@@ -174,7 +171,7 @@ fn test_cnf_clause() {
 
 
 /// A conjunction (∧) of clauses
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub struct CNFSystem {
     pub clauses: HashSet<CNFClause>,
 }
