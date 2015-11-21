@@ -1,4 +1,5 @@
 use cnf_system::{CNFClause, CNFSystem, ClauseType};
+use std::collections::BTreeSet;
 
 /// Applies unit propagation of a literal l to a system.
 ///     If a clause contains: l, then remove that entire clause
@@ -47,8 +48,8 @@ fn basic_dpll_get_unit_literal(system: &CNFSystem) -> Option<isize> {
 /// Takes in a system (without any tautologies, as they can be optimised out when parsed), and
 /// return if it's Satisfiable or Unsatisfiable using the DPLL algorithm.
 /// Assumes that there's at least one clause in the system
-pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, Vec<isize>) {
-    let mut interpretation: Vec<isize> = vec![];
+pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, BTreeSet<isize>) {
+    let mut interpretation: BTreeSet<isize> = BTreeSet::new();
 
     loop {
         match basic_dpll_get_unit_literal(system) {
@@ -56,7 +57,7 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, Vec<isize>) {
                 if !basic_dpll_propagate(system, literal) {
                     return (ClauseType::Unsatisfiable, interpretation)
                 } else if system.len() == 0 {
-                    interpretation.push(literal);
+                    interpretation.insert(literal);
                     return (ClauseType::Satisfiable, interpretation);
                 }
             }
@@ -82,7 +83,7 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, Vec<isize>) {
                 match basic_dpll(system) {
                     (ClauseType::Unsatisfiable, _) => {
                         other_system.add_clause(other_new_clause);
-                        interpretation.push(-some_literal);
+                        interpretation.insert(-some_literal);
                         // Must be Satisfiable or Unsatisfiable
                         match basic_dpll(other_system) {
                             (ClauseType::Satisfiable, new_interpretation) => {
@@ -95,7 +96,7 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, Vec<isize>) {
                         }
                     },
                     (clause_type, new_interpretation) => {
-                        interpretation.push(some_literal);
+                        interpretation.insert(some_literal);
                         interpretation.extend(new_interpretation.iter().cloned());
                         return (clause_type, interpretation)
                     },
