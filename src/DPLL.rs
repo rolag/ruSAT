@@ -70,7 +70,6 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, BTreeSet<isize>) {
                 // there's at least one clause in the set)
                 let some_literal = system.clauses.iter()
                                                  .next().unwrap()
-                                                 .get_literals()
                                                  .iter()
                                                  .next().unwrap()
                                                  .clone();

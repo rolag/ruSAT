@@ -1,4 +1,5 @@
 use std::collections::{BTreeSet, HashSet};
+use std::collections::btree_set::Iter;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum ClauseType {
@@ -46,9 +47,9 @@ impl CNFClause {
         self.literals.remove(&literal)
     }
 
-    /// Returns an immutable reference to the BTreeSet<Literals>
-    pub fn get_literals(&self) -> &BTreeSet<isize> {
-        &(self.literals)
+    /// Returns an iterator over the literals
+    pub fn iter(&self) -> Iter<isize> {
+        self.literals.iter()
     }
 
     /// Returns true if this clause contains the literal
