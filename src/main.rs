@@ -23,7 +23,13 @@ fn show_help(program_name: String) {
 }
 
 fn show_version() {
-    println!("print license and version here");
+    println!("ruSAT  Copyright (C) 2015");
+    println!("This program comes with ABSOLUTELY NO WARRANTY");
+    println!("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>");
+    println!("This is free software, and you are welcome to redistribute it");
+    println!("under certain conditions.");
+    println!("");
+    println!("Home: https://github.com/rolag/ruSAT/");
 }
 
 fn check_option(program_name: String, option: &String, option_values: Vec<&str>, option_name: &str) {
