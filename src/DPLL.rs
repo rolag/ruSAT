@@ -93,7 +93,6 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, Vec<isize>) {
                                 return (clause_type, new_interpretation);
                             }
                         }
-                        return basic_dpll(other_system);
                     },
                     (clause_type, new_interpretation) => {
                         interpretation.push(some_literal);

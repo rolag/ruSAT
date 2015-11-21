@@ -10,7 +10,6 @@ pub enum ClauseType {
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 /// A clause in clausal normal form (CNF) i.e. a disjunction (∨) of literals
-//  An unsatisfiable clause is denoted by a clause that contains a zero
 pub struct CNFClause {
     // Ordered set of literals, as order doesn't matter and the amount of times a literal occurs
     // doesn't matter: (a ∨ a) <=> (a)
@@ -23,12 +22,6 @@ impl CNFClause {
         CNFClause{ literals: BTreeSet::new() }
     }
 
-    pub fn empty() -> CNFClause {
-        let mut literals = BTreeSet::new();
-        literals.insert(0);
-        CNFClause{ literals: literals, }
-    }
-
     /// If the clause contains only one literal, return it as Some(Literal). Otherwise, return
     /// None.
     pub fn get_unit(&self) -> Option<&isize> {
@@ -37,35 +30,6 @@ impl CNFClause {
         } else {
             None
         }
-    }
-
-    /// Checks if the clause is a tautology. If it is, then it changes the clause's type to
-    /// ClauseType::Tautology, and returns true. Otherwise (including if unknown), returns false.
-    pub fn is_tautology(&self) -> bool {
-        let mut is_tautology = false;
-        // Check if there are two literals with the same id and are both true and false
-        // because (n1 ∨ ¬n1 ∨ ...) is always true
-        for each_literal in self.literals.iter().filter(|&&x| x < 0) {
-            if self.contains(-each_literal) {
-                is_tautology = true;
-                break;
-            }
-        }
-        is_tautology
-    }
-
-    /// Returns whether or not the clause is horn (contains no more than 1 positive literal)
-    pub fn is_horn(&self) -> bool {
-        let mut positive_literals: usize = 0;
-        for each_literal in &self.literals {
-            if each_literal > &0 {
-                positive_literals += 1;
-            }
-            if positive_literals > 1 {
-                break;
-            }
-        }
-        positive_literals <= 1
     }
 
     /// Add a new literal to the clause
@@ -99,11 +63,7 @@ impl CNFClause {
 
     /// If the clause contains no literals, then it adds a literal zero
     pub fn is_empty(&self) -> bool {
-        if self.len() == 0 {
-            true
-        } else {
-            false
-        }
+        self.len() == 0
     }
 
 } // impl CNFClause
@@ -184,19 +144,7 @@ impl CNFSystem {
         }
     }
 
-    /// Returns true if the system contains clauses with ClauseType::Unknown type
-    //pub fn contains_unidentified_clauses(&self) -> bool {
-    //    let mut contains_unidentified = false;
-    //    for clause in &self.clauses {
-    //        if clause.get_type() == ClauseType::Unknown {
-    //            contains_unidentified = true;
-    //            break;
-    //        }
-    //    }
-    //    contains_unidentified
-    //}
-
-    /// Checks is a clause contains a unit literal and removes the clause that contain just that
+    /// Checks if a clause contains a unit literal and removes the clause that contain just that
     /// literal. Returns an Option of the literal.
     pub fn take_unit_clause(&mut self) -> Option<isize> {
         let mut literal: isize = 0; // Can't have literal of value zero
@@ -227,10 +175,12 @@ impl CNFSystem {
         self.clauses.insert(clause)
     }
 
+    /// Removes a clause from the system. Returns false if the value wasn't already in the system
     pub fn remove_clause(&mut self, clause: &CNFClause) -> bool {
         self.clauses.remove(clause)
     }
 
+    /// Return the amount of clauses in the system
     pub fn len(&self) -> usize {
         self.clauses.len()
     }
