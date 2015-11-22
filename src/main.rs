@@ -1,9 +1,10 @@
 use std::{io, process, env};
 use std::io::prelude::*;
+use std::collections::HashSet;
 mod cnf_system;
 use cnf_system::{CNFSystem, CNFClause, ClauseType};
 mod DPLL;
-use DPLL::{basic_dpll};
+use DPLL::{concurrent_dpll};
 
 // Show help and exit
 fn show_help(program_name: String) {
@@ -136,6 +137,8 @@ fn main() {
 
     let mut system = CNFSystem::new(None);
     let mut contains_tautologies = false;
+    // The units that exist in the input system, before any algorithm is applied to it
+    let mut units = HashSet::new();
 
     // Skip all comment lines i.e. a line that begins with 'c' and the program line i.e. a line
     // like 'p VARIABLE_COUNT CLAUSE_COUNT'
@@ -174,6 +177,9 @@ fn main() {
             }
         }
         if current_clause.len() > 0 {
+            if current_clause.len() == 1 {
+                units.insert(current_clause.iter().next().unwrap().clone());
+            }
             system.add_clause(current_clause);
         }
     }
@@ -188,7 +194,7 @@ fn main() {
         //println!("System: {:?}", system);
 
         // Find if the system is satisfiable or unsatisfiable or tautology
-        match basic_dpll(&mut system) {
+        match concurrent_dpll(&mut system, units) {
             (ClauseType::Tautology, _)     => println!("TAUTOLOGY"),
             (ClauseType::Satisfiable, interpretation) => println!("SATISFIABLE: {:?}", interpretation),
             (ClauseType::Unsatisfiable, _) => println!("UNSATISFIABLE"),
