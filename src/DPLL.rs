@@ -196,7 +196,7 @@ pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>)
     positive_clause.insert( some_literal);
     negative_clause.insert(-some_literal);
 
-    // Create a new system to branch of from
+    // Create a new system for the new branch
     let mut system2 = &mut system.clone();
 
     // Create a channel to send messages between the new threads
@@ -206,7 +206,6 @@ pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>)
 
     unsafe {
         let handle1 = thread_scoped::scoped(move || {
-            let positive_units = 
             sender1.send(concurrent_dpll(system, positive_clause)).unwrap();
         });
         let handle2 = thread_scoped::scoped(move || {
