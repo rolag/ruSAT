@@ -114,7 +114,7 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, BTreeSet<isize>) {
 ///     If a clause contains: not(l), then remove not(l) from the clause but keep the others
 /// Returns (true, new_units) if successful, (false, _) if a set contradicts another
 pub fn concurrent_dpll_propagate(system: &mut CNFSystem, literal: isize)
-                                 -> (bool, HashSet<isize>) {
+                                 -> Option<HashSet<isize>> {
     let mut new_units = HashSet::new();
     let mut no_empty_clauses = true;
     let mut clauses_to_remove: Vec<CNFClause> = vec![];
@@ -138,10 +138,7 @@ pub fn concurrent_dpll_propagate(system: &mut CNFSystem, literal: isize)
         if system.remove_clause(&each_clause) {
             each_clause.remove(&-literal);
             match each_clause.len() {
-                0 => {
-                    no_empty_clauses = false;
-                    break;
-                },
+                0 => { return None; },
                 1 => {
                     new_units.insert(each_clause.iter()          // get literals iterator
                                                 .next().unwrap() // get first literal
@@ -153,7 +150,7 @@ pub fn concurrent_dpll_propagate(system: &mut CNFSystem, literal: isize)
             system.add_clause(each_clause);
         }
     }
-    (no_empty_clauses, new_units)
+    Some(new_units)
 }
 
 /// Takes in a system (without any tautologies, as they can be optimised out when parsed), and
@@ -170,8 +167,8 @@ pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>)
         let mut revealed_units = HashSet::new();
         for each_unit_literal in current_units {
             match concurrent_dpll_propagate(system, each_unit_literal) {
-                (false, _)        => { return (ClauseType::Unsatisfiable, interpretation); },
-                (true, new_units) => {
+                None            => { return (ClauseType::Unsatisfiable, interpretation); },
+                Some(new_units) => {
                     revealed_units.extend(new_units);
                     interpretation.insert(each_unit_literal);
                     if system.len() == 0 {
