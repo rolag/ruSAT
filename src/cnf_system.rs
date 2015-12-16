@@ -23,16 +23,6 @@ impl CNFClause {
         CNFClause{ literals: BTreeSet::new() }
     }
 
-    /// If the clause contains only one literal, return it as Some(Literal). Otherwise, return
-    /// None.
-    pub fn get_unit(&self) -> Option<&isize> {
-        if self.len() == 1 {
-            self.literals.iter().next()
-        } else {
-            None
-        }
-    }
-
     /// Add a new literal to the clause
     /// Returns true if value was not already present in the set
     pub fn add(&mut self, literal: isize) -> bool {
@@ -60,11 +50,6 @@ impl CNFClause {
     /// Returns the amount of elements in the set
     pub fn len(&self) -> usize {
         self.literals.len()
-    }
-
-    /// If the clause contains no literals, then it adds a literal zero
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 
 } // impl CNFClause
@@ -143,32 +128,6 @@ impl CNFSystem {
             Some(c) => CNFSystem{ clauses: c, },
             None    => CNFSystem{ clauses: HashSet::new(), },
         }
-    }
-
-    /// Checks if a clause contains a unit literal and removes the clause that contain just that
-    /// literal. Returns an Option of the literal.
-    pub fn take_unit_clause(&mut self) -> Option<isize> {
-        let mut literal: isize = 0; // Can't have literal of value zero
-        for each_clause in self.clauses.iter() {
-            match each_clause.get_unit() {
-                Some(l) => { literal = l.clone(); break; },
-                None => continue,
-            }
-        }
-        match literal {
-            0 => None,
-            x => {
-                let mut clause = CNFClause::new();
-                clause.add(x.clone());
-                self.clauses.remove(&clause);
-                Some(x)
-            },
-        }
-    }
-
-    /// Returns true if the system already contains a clause
-    pub fn contains(&self, other_clause: &CNFClause) -> bool {
-        self.clauses.contains(&other_clause)
     }
 
     /// Add a clause to the system. Returns false if the value was already in the system
