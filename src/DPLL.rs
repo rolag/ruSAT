@@ -113,7 +113,7 @@ pub fn basic_dpll(system: &mut CNFSystem) -> (ClauseType, BTreeSet<isize>) {
 ///     If a clause contains: l, then remove that entire clause
 ///     If a clause contains: not(l), then remove not(l) from the clause but keep the others
 /// Returns (true, new_units) if successful, (false, _) if a set contradicts another
-pub fn concurrent_dpll_propagate<'a>(system: &'a mut CNFSystem, literal: isize)
+pub fn concurrent_dpll_propagate(system: &mut CNFSystem, literal: isize)
                                  -> (bool, HashSet<isize>) {
     let mut new_units = HashSet::new();
     let mut no_empty_clauses = true;
