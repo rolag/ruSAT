@@ -1,5 +1,11 @@
+CARGO := cargo rustc --
+OUT_FILE_OPT := -o rusat
+
+FLAGS = 
+OPTIMISE_FLAG = -C lto -C opt-level=3
+
 all:
-	$(MAKE) optimise
+	$(CARGO) $(FLAGS) $(OUT_FILE_OPT)
 
 optimise:
-	cargo rustc -- -C lto -C opt-level=3 -o rusat
+	$(CARGO) $(OPTIMISE_FLAG) $(OUT_FILE_OPT)
