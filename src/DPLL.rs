@@ -50,7 +50,7 @@ pub fn concurrent_dpll_propagate(system: &mut CNFSystem, literal: isize)
 /// Takes in a system (without any tautologies, as they can be optimised out when parsed), and
 /// return if it's Satisfiable or Unsatisfiable using a concurrent version of the DPLL algorithm.
 /// Assumes that there's at least one clause in the system
-pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>)
+pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>, thread_count: isize)
                       -> (ClauseType, BTreeSet<isize>) {
     let mut interpretation: BTreeSet<isize> = BTreeSet::new();
     let mut current_units = units;
@@ -96,12 +96,19 @@ pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>)
     let sender2 = sender.clone();
 
     unsafe {
-        let handle1 = thread_scoped::scoped(move || {
-            sender1.send(concurrent_dpll(system, positive_clause)).unwrap();
-        });
-        let handle2 = thread_scoped::scoped(move || {
-            sender2.send(concurrent_dpll(system2, negative_clause)).unwrap();
-        });
+        if thread_count >= 2 {
+            let handle1 = thread_scoped::scoped(move || {
+                sender1.send(concurrent_dpll(system, positive_clause, thread_count - 2)).unwrap();
+            });
+            let handle2 = thread_scoped::scoped(move || {
+                sender2.send(concurrent_dpll(system2, negative_clause, thread_count - 2)).unwrap();
+            });
+        } else {
+            let handle1 = thread_scoped::scoped(move || {
+                sender1.send(concurrent_dpll(system, positive_clause, thread_count - 1)).unwrap();
+            });
+            sender2.send(concurrent_dpll(system2, negative_clause, 0)).unwrap();
+        }
     }
 
     // Now, wait for one (or both) of the threads to come back with a result
