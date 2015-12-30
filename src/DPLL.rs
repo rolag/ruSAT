@@ -97,16 +97,16 @@ pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>, thread_cou
 
     unsafe {
         if thread_count >= 2 {
-            let handle1 = thread_scoped::scoped(move || {
+            thread_scoped::scoped(move || {
                 sender1.send(concurrent_dpll(system, positive_clause, thread_count - 2)).unwrap();
-            });
-            let handle2 = thread_scoped::scoped(move || {
+            }).join();
+            thread_scoped::scoped(move || {
                 sender2.send(concurrent_dpll(system2, negative_clause, thread_count - 2)).unwrap();
-            });
+            }).join();
         } else {
-            let handle1 = thread_scoped::scoped(move || {
-                sender1.send(concurrent_dpll(system, positive_clause, thread_count - 1)).unwrap();
-            });
+            thread_scoped::scoped(move || {
+                sender1.send(concurrent_dpll(system, positive_clause, 0)).unwrap();
+            }).join();
             sender2.send(concurrent_dpll(system2, negative_clause, 0)).unwrap();
         }
     }
