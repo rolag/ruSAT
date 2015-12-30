@@ -3,7 +3,6 @@ use std::collections::btree_set::Iter;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum ClauseType {
-    Unknown,
     Tautology,      // Always true    -- all interpretations are models
     Satisfiable,    // Sometimes true -- has some models
     Unsatisfiable,  // Never true     -- no models

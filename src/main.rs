@@ -198,7 +198,6 @@ fn main() {
             (ClauseType::Tautology, _)     => println!("TAUTOLOGY"),
             (ClauseType::Satisfiable, interpretation) => println!("SATISFIABLE: {:?}", interpretation),
             (ClauseType::Unsatisfiable, _) => println!("UNSATISFIABLE"),
-            (ClauseType::Unknown, _)       => println!("UNKNOWN"),
         }
     }
 }

@@ -10,7 +10,6 @@ use std::sync::mpsc;
 pub fn concurrent_dpll_propagate(system: &mut CNFSystem, literal: isize)
                                  -> Option<HashSet<isize>> {
     let mut new_units = HashSet::new();
-    let mut no_empty_clauses = true;
     let mut clauses_to_remove: Vec<CNFClause> = vec![];
     let mut clauses_to_reduce: Vec<CNFClause> = vec![];
 
