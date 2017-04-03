@@ -1,6 +1,7 @@
 use std::collections::{BTreeSet, HashSet};
 use std::collections::btree_set::Iter;
 
+#[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum ClauseType {
     Tautology,      // Always true    -- all interpretations are models

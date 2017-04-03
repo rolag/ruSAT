@@ -3,8 +3,8 @@ use std::io::prelude::*;
 use std::collections::HashSet;
 mod cnf_system;
 use cnf_system::{CNFSystem, CNFClause, ClauseType};
-mod DPLL;
-use DPLL::{concurrent_dpll};
+mod dpll;
+use dpll::{concurrent_dpll};
 
 // Show help and exit
 fn show_help(program_name: String) {
