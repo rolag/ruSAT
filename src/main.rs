@@ -132,15 +132,17 @@ fn main() {
     // Skip all comment lines i.e. a line that begins with 'c' and the program line i.e. a line
     // like 'p VARIABLE_COUNT CLAUSE_COUNT'
     'next_line: for lines in input.lock().lines() {
-        let current_line: String = lines.unwrap(); // expect string from iterator
+        let current_line: String = lines.unwrap(); // expect valid string from stdin
         let words = current_line.split_whitespace().collect::<Vec<_>>();
-        if words.len() == 0 {
-            continue;
-        }
-        let first_char = words.iter().next().unwrap()   // get first word
-                              .chars().next().unwrap(); // get first char (of first word)
-        if first_char == 'c'  || first_char == 'p' {
-            //println!("Ignoring: {:?}", words);
+        if let Some(first_word) = words.iter().next() {
+            if let Some(first_char) = first_word.chars().next() {
+                if first_char == 'c' || first_char == 'p' {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+        } else {
             continue;
         }
         // Now, insert the actual input into the system
