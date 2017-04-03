@@ -32,10 +32,10 @@ fn show_version() {
     println!("Home: https://github.com/rolag/ruSAT/");
 }
 
-fn check_option(program_name: String, option: &String, option_values: Vec<&str>, option_name: &str) {
+fn check_option(program_name: &str, option: &str, option_values: &[&str], option_name: &str) {
     let mut option_is_valid = false;
-    for each_value in &option_values {
-        if each_value == option {
+    for each_value in option_values {
+        if *each_value == option {
             option_is_valid = true;
             break;
         }
@@ -47,18 +47,18 @@ fn check_option(program_name: String, option: &String, option_values: Vec<&str>,
     }
 }
 
-fn get_next_arg_or_err(program_name: String, args: &Vec<String>, current_index: usize) -> String {
+fn get_next_arg_or_err<'a>(program_name: &str, args: &'a [String], current_index: usize) -> &'a str {
     let arg_count = args.len();
     if current_index == arg_count - 1 {
         error_and_exit(program_name,
                        format!("necessary argument to {} not given", args[arg_count - 1]),
                        22);
     } else {
-        args[current_index + 1].clone()
+        &args[current_index + 1]
     }
 }
 
-fn error_and_exit(program_name: String, error_message: String, exit_code: i32) -> ! {
+fn error_and_exit(program_name: &str, error_message: String, exit_code: i32) -> ! {
     println!("{}: {}", program_name, error_message);
     process::exit(exit_code);
 }
@@ -73,10 +73,10 @@ fn main() {
     }
 
     // Set argument defaults
-    let mut input_type = "dimacs".to_string();
+    let mut input_type = "dimacs";
     let input_types = vec!["dimacs"];
 
-    let mut input_file = "-".to_string();
+    let mut input_file = "-";
 
     let mut check_type = "sat-check".to_string();
 
@@ -88,12 +88,12 @@ fn main() {
                 check_type = "sat-check".to_string();
             },
             option if (option == "-i") | (option == "--input-type") => {
-                input_type = get_next_arg_or_err(program_name.clone(), &args, arg_index);
-                check_option(program_name.clone(), &input_type, input_types.clone(), option );
+                input_type = get_next_arg_or_err(&program_name, &args[..], arg_index);
+                check_option(&program_name, input_type, &input_types[..], option);
                 arg_index += 1;
             },
             "-f" | "--file" => {
-                input_file = get_next_arg_or_err(program_name.clone(), &args, arg_index);
+                input_file = get_next_arg_or_err(&program_name, &args, arg_index);
                 arg_index += 1;
             },
             "-v" | "--version" => {
@@ -105,7 +105,7 @@ fn main() {
                 process::exit(0);
             },
             bad_option => {
-                error_and_exit(program_name,
+                error_and_exit(&program_name,
                                format!("not and option: {}", bad_option),
                                22
                                );
@@ -149,7 +149,7 @@ fn main() {
             // Convert word to integer
             let literal = match each_word.parse::<isize>() {
                 Ok(word) => word,
-                Err(_) => error_and_exit(program_name,
+                Err(_) => error_and_exit(&program_name,
                                          format!("not a valid comment, program or input line: {}",
                                                  current_line),
                                          22),
@@ -177,7 +177,7 @@ fn main() {
         if contains_tautologies {
             println!("TAUTOLOGY");
         } else {
-            error_and_exit(program_name, format!("you need to enter a system"), 22);
+            error_and_exit(&program_name, format!("you need to enter a system"), 22);
         }
     } else {
         //println!("System: {:?}", system);
