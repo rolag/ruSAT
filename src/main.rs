@@ -17,7 +17,6 @@ fn show_help(program_name: String) {
                         are 'dimacs'. Default: dimacs.
 -f, --file FILE         Read in the system from FILE. If FILE is ``-'', then
                         input is read from stdin. Default: ``-''.
--m, --models            Returns all models of the system or print unsatisfiable.
 -v, --version           Output version and exit, regardless of other arguments.
 -h, -?, --help          Output usage and exit, regardless of other arguments."
             );
@@ -68,10 +67,10 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let program_name = args[0].clone();
     let arg_count: usize = args.len();
-    //if arg_count == 1 {
-    //    show_help(program_name);
-    //    process::exit(0);
-    //}
+    if arg_count == 1 {
+        show_help(program_name);
+        process::exit(0);
+    }
 
     // Set argument defaults
     let mut input_type = "dimacs".to_string();
@@ -80,7 +79,6 @@ fn main() {
     let mut input_file = "-".to_string();
 
     let mut check_type = "sat-check".to_string();
-    //let check_types = vec!["sat-check", "model-check"];
 
     // Loop through each argument, changing argument options when necessary
     let mut arg_index = 1;
@@ -88,9 +86,6 @@ fn main() {
         match args[arg_index].as_ref() {
             "-c" | "--check-sat" | "--sat-check" => {
                 check_type = "sat-check".to_string();
-            },
-            "-m" | "--models" | "--get-models" | "--get-all-models" => {
-                check_type = "model-check".to_string();
             },
             option if (option == "-i") | (option == "--input-type") => {
                 input_type = get_next_arg_or_err(program_name.clone(), &args, arg_index);
@@ -117,12 +112,6 @@ fn main() {
             },
         }
         arg_index += 1;
-    }
-
-    // TODO: implement algorithm for getting all models in CNF form
-    if check_type == "model-check" {
-        println!("model check not implemented yet");
-        process::exit(38);
     }
 
     let mut input;
