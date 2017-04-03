@@ -11,10 +11,6 @@ fn show_help(program_name: String) {
     println!("Usage: {} [options]", program_name);
     println!("Mandatory arguments to long options are mandatory for short options too.");
     println!("
--c, --check-sat         Checks if the input system is a tautology, satisfiable
-                        or unsatisfiable.
--i, --input-type TYPE   Input the system as using TYPE format. Possible values
-                        are 'dimacs'. Default: dimacs.
 -f, --file FILE         Read in the system from FILE. If FILE is ``-'', then
                         input is read from stdin. Default: ``-''.
 -v, --version           Output version and exit, regardless of other arguments.
@@ -30,21 +26,6 @@ fn show_version() {
     println!("under certain conditions.");
     println!("");
     println!("Home: https://github.com/rolag/ruSAT/");
-}
-
-fn check_option(program_name: &str, option: &str, option_values: &[&str], option_name: &str) {
-    let mut option_is_valid = false;
-    for each_value in option_values {
-        if *each_value == option {
-            option_is_valid = true;
-            break;
-        }
-    }
-    if !option_is_valid {
-        error_and_exit(program_name,
-                       format!("invalid value for argument '{}': '{}'", option_name, option),
-                       22);
-    }
 }
 
 fn get_next_arg_or_err<'a>(program_name: &str, args: &'a [String], current_index: usize) -> &'a str {
@@ -73,25 +54,12 @@ fn main() {
     }
 
     // Set argument defaults
-    let mut input_type = "dimacs";
-    let input_types = vec!["dimacs"];
-
     let mut input_file = "-";
-
-    let mut check_type = "sat-check".to_string();
 
     // Loop through each argument, changing argument options when necessary
     let mut arg_index = 1;
     while arg_index < arg_count {
         match args[arg_index].as_ref() {
-            "-c" | "--check-sat" | "--sat-check" => {
-                check_type = "sat-check".to_string();
-            },
-            option if (option == "-i") | (option == "--input-type") => {
-                input_type = get_next_arg_or_err(&program_name, &args[..], arg_index);
-                check_option(&program_name, input_type, &input_types[..], option);
-                arg_index += 1;
-            },
             "-f" | "--file" => {
                 input_file = get_next_arg_or_err(&program_name, &args, arg_index);
                 arg_index += 1;
@@ -114,7 +82,7 @@ fn main() {
         arg_index += 1;
     }
 
-    let mut input;
+    let input;
     if input_file == "-" {
         // Read in CNF system from stdin in dimacs form, for now
         input = io::stdin();
