@@ -2,6 +2,3 @@
 name = "rusat"
 version = "0.1.0"
 authors = [" <>"]
-
-[dependencies]
-thread-scoped = "1.0.1"

@@ -1,7 +1,7 @@
-extern crate thread_scoped;
 use cnf_system::{CNFClause, CNFSystem, ClauseType};
 use std::collections::{BTreeSet, HashSet};
 use std::sync::mpsc;
+use std::thread;
 
 /// Applies unit propagation of a literal l to a system.
 ///     If a clause contains: l, then remove that entire clause
@@ -49,7 +49,7 @@ pub fn concurrent_dpll_propagate(system: &mut CNFSystem, literal: isize)
 /// Takes in a system (without any tautologies, as they can be optimised out when parsed), and
 /// return if it's Satisfiable or Unsatisfiable using a concurrent version of the DPLL algorithm.
 /// Assumes that there's at least one clause in the system
-pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>, thread_count: isize)
+pub fn concurrent_dpll(mut system: CNFSystem, units: HashSet<isize>, thread_count: isize)
                       -> (ClauseType, BTreeSet<isize>) {
     let mut interpretation: BTreeSet<isize> = BTreeSet::new();
     let mut current_units = units;
@@ -59,7 +59,7 @@ pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>, thread_cou
         // The new units revealed by previous unit propagation
         let mut revealed_units = HashSet::new();
         for each_unit_literal in current_units {
-            match concurrent_dpll_propagate(system, each_unit_literal) {
+            match concurrent_dpll_propagate(&mut system, each_unit_literal) {
                 None            => { return (ClauseType::Unsatisfiable, interpretation); },
                 Some(new_units) => {
                     revealed_units.extend(new_units);
@@ -87,27 +87,29 @@ pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>, thread_cou
     negative_clause.insert(-some_literal);
 
     // Create a new system for the new branch
-    let mut system2 = &mut system.clone();
+    let system2 = system.clone();
 
     // Create a channel to send messages between the new threads
     let (sender, receiver) = mpsc::channel();
     let sender1 = sender.clone();
     let sender2 = sender.clone();
 
-    unsafe {
-        if thread_count >= 2 {
-            thread_scoped::scoped(move || {
-                sender1.send(concurrent_dpll(system, positive_clause, thread_count - 2)).unwrap();
-            }).join();
-            thread_scoped::scoped(move || {
-                sender2.send(concurrent_dpll(system2, negative_clause, thread_count - 2)).unwrap();
-            }).join();
-        } else {
-            thread_scoped::scoped(move || {
-                sender1.send(concurrent_dpll(system, positive_clause, 0)).unwrap();
-            }).join();
-            sender2.send(concurrent_dpll(system2, negative_clause, 0)).unwrap();
-        }
+    // Spawn threads for each system. We can call unwrap() on the join() methods because DPLL is
+    // sound and the only way for this unwrap to panic is for the spawned concurrent_dpll() to
+    // panic
+    if thread_count >= 2 {
+        thread::spawn(move || {
+            sender1.send(concurrent_dpll(system, positive_clause, thread_count - 2)).unwrap();
+        }).join().unwrap();
+        thread::spawn(move || {
+            let system = system2;
+            sender2.send(concurrent_dpll(system, negative_clause, thread_count - 2)).unwrap();
+        }).join().unwrap();
+    } else {
+        thread::spawn(move || {
+            sender1.send(concurrent_dpll(system, positive_clause, 0)).unwrap();
+        }).join().unwrap();
+        sender2.send(concurrent_dpll(system2, negative_clause, 0)).unwrap();
     }
 
     // Now, wait for one (or both) of the threads to come back with a result
@@ -115,7 +117,7 @@ pub fn concurrent_dpll(system: &mut CNFSystem, units: HashSet<isize>, thread_cou
     match thread_result_iterator.next().unwrap() {
         (ClauseType::Unsatisfiable, _) => {
             // Wait for other result
-            match thread_result_iterator.next().unwrap() {
+            match thread_result_iterator.next().expect("sent two messages but only received one") {
                 (ClauseType::Unsatisfiable, new_interpretation) => {
                     (ClauseType::Unsatisfiable, new_interpretation)
                 },

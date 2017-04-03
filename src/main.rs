@@ -153,7 +153,7 @@ fn main() {
         //println!("System: {:?}", system);
 
         // Find if the system is satisfiable or unsatisfiable or tautology
-        match concurrent_dpll(&mut system, units, 16) {
+        match concurrent_dpll(system, units, 16) {
             (ClauseType::Tautology, _)     => println!("TAUTOLOGY"),
             (ClauseType::Satisfiable, interpretation) => println!("SATISFIABLE: {:?}", interpretation),
             (ClauseType::Unsatisfiable, _) => println!("UNSATISFIABLE"),
